@@ -101,7 +101,16 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 export OPENAI_API_KEY="sk-..."
 ```
 
-> **Tip:** Add these to your shell profile (for example `~/.zshrc`) so they persist across
+If you plan to run either bundled template (`python-langgraph` or `js-langgraph-agent`) locally,
+also store the key in the Apify CLI's secret store now - both templates' `.actor/actor.json`
+reference the `@OPENAI_API_KEY` secret, and `apify run` fails when it is missing, even with the
+key exported:
+
+```bash
+apify secrets add OPENAI_API_KEY "sk-..."
+```
+
+> **Tip:** Add the exports to your shell profile (for example `~/.zshrc`) so they persist across
 > sessions. Never commit keys to the repo.
 
 ### 4. Install the Apify Actor Development skill
@@ -119,7 +128,7 @@ does in its [SKILL.md](https://github.com/apify/agent-skills/blob/main/skills/ap
 
 ### 5. Create your first Actor
 
-From the root of this repo, scaffold a basic Python Actor:
+From the root of this repo, scaffold a basic Actor:
 
 ```bash
 apify create
@@ -129,7 +138,6 @@ When prompted, choose **Python** or **JavaScript**  and the **LangGraph AI agent
 creates your Actor's files in place. Browse every starter at
 [Apify Actor templates](https://apify.com/templates), and read the
 [Python SDK docs](https://docs.apify.com/sdk/python) or [JavaScript SDK docs](https://docs.apify.com/sdk/js) for how Actor code is structured.
-[JavaScript SDK docs](https://docs.apify.com/sdk/js) for how Actor code is structured.
 
 ### 6. Tour the structure
 
@@ -140,7 +148,8 @@ Open the files the CLI created and find these (all defined in the
   your Actor's metadata and configuration.
 - [`.actor/input_schema.json`](https://docs.apify.com/platform/actors/development/actor-definition/input-schema) -
   the shape of the JSON input your Actor accepts.
-- `src/` - your Actor's code (the `main` entry point lives here).
+- `src/` - your Actor's code (the `main` entry point lives here). The bundled
+  `python-langgraph` template keeps its code in `my_actor/` instead.
 - [`Dockerfile`](https://docs.apify.com/platform/actors/development/actor-definition/dockerfile) -
   how your Actor is built and run on the Apify platform.
 
@@ -288,12 +297,16 @@ this covers it.
 
 ### 3. Add your LLM key to the platform
 
-Your local runs read the LLM key from your shell, but the deployed Actor needs its own copy.
-Store it as a secret, then reference it from your input schema or environment:
+The deployed Actor needs its own copy of the LLM key, stored as a secret and referenced from
+your `.actor/actor.json`. The secret name has to match whatever that file references - both
+bundled templates (`python-langgraph` and `js-langgraph-agent`) reference `@OPENAI_API_KEY`
+(if you already added it in step 1.3, you are done):
 
 ```bash
-apify secrets add ANTHROPIC_API_KEY "sk-ant-..."
+apify secrets add OPENAI_API_KEY "sk-..."
 ```
+
+If you swapped the agent to Claude, create `ANTHROPIC_API_KEY` instead.
 
 > **Note:** Secrets you add with `apify secrets` live on the Apify platform and are injected at
 > runtime, encrypted at rest and redacted from logs. Without this, the deployed run fails at the
@@ -388,6 +401,11 @@ In the **Publication** tab, open **Monetization** and follow the wizard (full wa
 2. **Primary event** - pick the one event that best represents the value your Actor delivers
    (for example, one result returned).
 3. **Review** - confirm everything, then submit.
+
+> **Note:** The bundled templates already declare their events in `.actor/pay_per_event.json`
+> (`actor-start` and `task-completed`). Pick **Pay per event** in the wizard and configure those
+> events - until you do, the `Actor.charge()` calls in the code are ignored and the Actor
+> earns nothing.
 
 > **Note:** Pay-per-event Actors with limited permissions automatically become eligible for
 > autonomous agent payment over protocols like x402 and Skyfire. There is no separate opt-in,
@@ -493,8 +511,10 @@ Everything linked across the steps, grouped for quick reference.
 - [Apify CLI](https://docs.apify.com/cli/) -
   [installation](https://docs.apify.com/cli/docs/installation),
   [command reference](https://docs.apify.com/cli/docs/reference)
-- [Apify SDK for Python](https://docs.apify.com/sdk/python)
-- [Apify client for Python](https://docs.apify.com/api/client/python/)
+- [Apify SDK for Python](https://docs.apify.com/sdk/python) and
+  [Apify SDK for JavaScript](https://docs.apify.com/sdk/js)
+- [Apify client for Python](https://docs.apify.com/api/client/python/) and
+  [Apify client for JavaScript](https://docs.apify.com/api/client/js/)
 - [Actor templates](https://apify.com/templates)
 
 ### Actor definition and storage

@@ -41,18 +41,21 @@ To do this, go to **Actor settings** → **Source** → **Code**, then scroll do
 
 This template uses the [Pay Per Event](https://docs.apify.com/platform/actors/publishing/monetize#pay-per-event-pricing-model) (PPE) monetization model, which provides flexible pricing based on defined events.
 
-To charge users, define events in JSON format and save them on the Apify platform. Here is an example of [pay_per_event.json](.actor/pay_per_event.json) with the `task-completed` event:
+To charge users, define events in JSON format and save them on the Apify platform. Here is the content of [pay_per_event.json](.actor/pay_per_event.json) with the `actor-start` and `task-completed` events:
 
 ```json
-[
-    {
-        "task-completed": {
-            "eventTitle": "Task completed",
-            "eventDescription": "Cost per query answered.",
-            "eventPriceUsd": 0.1
-        }
+{
+    "actor-start": {
+        "eventTitle": "Price for Actor start",
+        "eventDescription": "Flat fee for starting an Actor run.",
+        "eventPriceUsd": 0.1
+    },
+    "task-completed": {
+        "eventTitle": "Price for completing the task",
+        "eventDescription": "Flat fee for completing the task.",
+        "eventPriceUsd": 0.4
     }
-]
+}
 ```
 
 In the Actor, trigger the event with:

@@ -1,6 +1,6 @@
 {
     "$schema": "https://apify.com/schemas/v1/input.ide.json",
-    "title": "LangGraph Agent Python",
+    "title": "Instagram Engagement Analyzer",
     "type": "object",
     "schemaVersion": 1,
     "properties": {
@@ -9,14 +9,13 @@
             "type": "string",
             "description": "Query for the agent.",
             "editor": "textfield",
-            "prefill": "What is the total number of likes and the total number of comments for the latest 10 posts on the @openai Instagram account? From the 10 latest posts, show me the most popular one.",
-            "default": "This is a fallback test query, do nothing and !!do not call any tools!!. If asked to generate structured response, create a dummy one without optional fields - minimal as possible."
+            "prefill": "What is the total number of likes and the total number of comments for the latest 10 posts on the @openai Instagram account? From the 10 latest posts, show me the most popular one."
         },
         "modelName": {
             "title": "OpenAI model",
             "type": "string",
-            "description": "The OpenAI model to use. Currently supported models are gpt-4o and gpt-4o-mini, and the reasoning models o1 and o3-mini.",
-            "enum": ["gpt-4o", "gpt-4o-mini", "o1", "o3-mini"],
+            "description": "The OpenAI model to use. Only gpt-4o-mini is offered because its token cost is what the flat pay-per-event fees cover.",
+            "enum": ["gpt-4o-mini"],
             "default": "gpt-4o-mini",
             "prefill": "gpt-4o-mini"
         },

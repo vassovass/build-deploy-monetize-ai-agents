@@ -1,105 +1,126 @@
-## Python LangGraph template
+## What does Instagram Engagement Analyzer do?
 
-<!-- This is an Apify template readme -->
+**Instagram Engagement Analyzer** is an AI agent that reads a public
+[Instagram](https://www.instagram.com/) profile's most recent posts and tells you, in one run,
+**how much engagement the account is getting and which post is winning**. It totals the likes and
+comments across the latest posts and surfaces the single most popular one, with its caption and a
+direct link.
 
-A template for [LangGraph](https://www.langchain.com/langgraph) projects in Python for building AI agents with [Apify Actors](https://apify.com/actors). The template provides a basic structure and an example [LangGraph](https://www.langchain.com/langgraph) [ReAct agent](https://react-lm.github.io/) that calls [Actors](https://apify.com/actors) as tools in a workflow.
+Under the hood it is a [LangGraph](https://www.langchain.com/langgraph) ReAct agent that calls the
+[Instagram Scraper](https://apify.com/apify/instagram-scraper) Actor as a tool, then reasons over
+the results. Because it runs on the Apify platform, you get API access, scheduling, integrations,
+proxy rotation, and run monitoring out of the box, and you can trigger it from anywhere over HTTP
+or from another agent over [MCP](https://docs.apify.com/platform/integrations/mcp).
 
-## How it works
+## Why use Instagram Engagement Analyzer?
 
-A [ReAct agent](https://react-lm.github.io/) is created and given a set of tools to accomplish a task. The agent receives a query from the user and decides which tools to use and in what order to complete the task. In this case, the agent is provided with an [Instagram Scraper Actor](https://apify.com/apify/instagram-scraper) to scrape Instagram profile posts and a calculator tool to sum a list of numbers to calculate the total number of likes and comments. The agent is configured to also output structured data, which is pushed to the dataset, while textual output is stored in the key-value store as a `response.txt` file.
+- **Competitor and benchmark tracking** - see how an account's recent posts are performing without
+  opening the app.
+- **Influencer vetting** - check real engagement on a profile before a partnership.
+- **Content research** - find the top-performing post and study what worked.
+- **Agent-ready** - it is a pay-per-event Actor, so other AI agents can discover, run, and pay for
+  it autonomously.
 
-## How to use
+## How to use Instagram Engagement Analyzer
 
-Add or modify the agent tools in the `src/tools.py` file, and make sure to include new tools in the agent tools list in `src/main.py`. Additionally, you can update the agent system prompt in `src/main.py`. For more information, refer to the [LangChain agents documentation](https://docs.langchain.com/oss/python/langchain/agents) and the [LangChain tools documentation](https://python.langchain.com/docs/concepts/tools/).
+1. Open the Actor and go to the **Input** tab.
+2. Write a plain-language **query** naming the profile and what you want, for example
+   "total likes and comments for the latest 10 posts on @openai, and the most popular one".
+3. Optionally pick the OpenAI **model** and toggle **debug**.
+4. Click **Start** and wait for the run to finish.
+5. Read the results in the **Output** and **Dataset** tabs, or pull them over the API.
 
-For a more advanced multi-agent example, see the [Finance Monitoring Agent actor](https://github.com/apify/actor-finance-monitoring-agent) or visit the [LangGraph documentation](https://langchain-ai.github.io/langgraph/concepts/multi_agent/).
+## Input
 
-#### Pay Per Event
+The Actor takes a small JSON input:
 
-This template uses the [Pay Per Event (PPE)](https://docs.apify.com/platform/actors/publishing/monetize#pay-per-event-pricing-model) monetization model, which provides flexible pricing based on defined events.
-
-To charge users, define events in JSON format and save them on the Apify platform. Here is an example schema with the `task-completed` event:
+- **query** (required) - a natural-language instruction naming the Instagram handle and the metrics
+  you want.
+- **modelName** - the OpenAI model to reason with (`gpt-4o-mini` by default).
+- **debug** - set to `true` for verbose logs.
 
 ```json
-[
-    {
-        "task-completed": {
-            "eventTitle": "Task completed",
-            "eventDescription": "Cost per query answered.",
-            "eventPriceUsd": 0.1
-        }
-    }
-]
+{
+  "query": "What is the total number of likes and comments for the latest 10 posts on the @openai Instagram account? Show me the most popular one.",
+  "modelName": "gpt-4o-mini",
+  "debug": false
+}
 ```
 
-In the Actor, trigger the event with:
+## Output
 
-```python
-await Actor.charge(event_name='task-completed')
+Each run writes one item to the dataset and a human-readable summary to the key-value store
+(`response.txt`). You can download the dataset in various formats such as JSON, HTML, CSV, or Excel.
+
+```json
+{
+  "status": "complete",
+  "response": "The latest posts have 65,971 likes and 2,151 comments in total. The most popular post is https://www.instagram.com/p/DalMyY0t0lp/ with 14,252 likes and 263 comments.",
+  "structured_response": {
+    "total_likes": 65971,
+    "total_comments": 2151,
+    "most_popular_posts": [
+      {
+        "url": "https://www.instagram.com/p/DalMyY0t0lp/",
+        "likes": 14252,
+        "comments": 263,
+        "timestamp": "2026-07-09T17:56:34.000Z",
+        "caption": "This is the new ChatGPT Work...",
+        "alt": "Video by ChatGPT on July 09, 2026."
+      }
+    ]
+  }
+}
 ```
 
-This approach allows you to programmatically charge users directly from your Actor, covering the costs of execution and related services, such as LLM input/output tokens.
+## Data table
 
-To set up the PPE model for this Actor:
+| Field | Description |
+|---|---|
+| status | `complete`, or `partial` when the most popular post could not be identified (a partial run is not charged the completion fee) |
+| response | A plain-text summary of the result, the same content saved to `response.txt` |
+| structured_response | Object holding the parsed metrics below |
+| structured_response.total_likes | Sum of likes across the analyzed posts |
+| structured_response.total_comments | Sum of comments across the analyzed posts |
+| structured_response.most_popular_posts | The top post(s) by engagement, each with url, likes, comments, timestamp, caption, and alt |
 
-- **Configure the OpenAI API key environment variable**: provide your OpenAI API key to the `OPENAI_API_KEY` in the Actor's **Environment variables**.
-- **Configure Pay Per Event**: establish the Pay Per Event pricing schema in the Actor's **Monetization settings**. First, set the **Pricing model** to `Pay per event` and add the schema. An example schema can be found in [pay_per_event.json](.actor/pay_per_event.json).
+## How much does it cost to analyze an Instagram profile?
 
-## Included features
+This Actor uses Apify's **pay-per-event** pricing: a flat fee when a run starts and a fee when it
+completes a task. The agent's OpenAI calls are covered by those fees, so you do not need an OpenAI
+account or key of your own. The bundled [Instagram Scraper](https://apify.com/apify/instagram-scraper)
+run is billed separately at that Actor's own rate (roughly $0.27 per 100 posts), so a typical
+10-post analysis costs the two fees plus a few cents of scraping. A run that cannot verify the
+most popular post against the scraped data is marked `partial` and the completion fee is not
+charged. The Apify free tier includes monthly usage credits that cover a handful of trial runs.
 
-- **[Apify SDK](https://docs.apify.com/sdk/python/)** for Python - a toolkit for building Apify [Actors](https://apify.com/actors) and scrapers in Python
-- **[Input schema](https://docs.apify.com/platform/actors/development/input-schema)** - define and easily validate a schema for your Actor's input
-- **[Dataset](https://docs.apify.com/sdk/python/docs/concepts/storages#working-with-datasets)** - store structured data where each object stored has the same attributes
-- **[Key-value store](https://docs.apify.com/platform/storage/key-value-store)** - store any kind of data, such as JSON documents, images, or text files
+## Tips and advanced options
 
-## Resources
+- Keep the query specific ("latest 10 posts") to limit scrape volume and cost. One scrape call
+  fetches at most 100 posts, and a whole run scrapes at most 200 across all calls.
+- Ask for the top post explicitly when you only need the winner.
+- Point an MCP client at `https://mcp.apify.com` to let an agent discover and run this Actor as a
+  tool with no glue code.
 
-- [What are AI agents?](https://blog.apify.com/what-are-ai-agents/)
-- [Python tutorials in Academy](https://docs.apify.com/academy/python)
-- [Apify Python SDK documentation](https://docs.apify.com/sdk/python/)
-- [LangChain documentation](https://python.langchain.com/docs/introduction/)
-- [LangGraph documentation](https://langchain-ai.github.io/langgraph/tutorials/introduction/)
-- [Integration with Make, GitHub, Zapier, Google Drive, and other apps](https://apify.com/integrations)
+## Project layout and extending
 
+The Actor's code lives in `my_actor/`: `main.py` holds the agent loop, the charging logic, and
+the system prompt; `tools.py` holds the tools (add a new one there and register it in the
+`tools` list in `main.py`); `models.py` defines the output shape. The two paid events are
+declared in `.actor/pay_per_event.json` - after publishing, pick **Pay per event** in Apify
+Console (Publication, then the Monetization wizard) and configure exactly those two events,
+otherwise the `Actor.charge()` calls are ignored and the Actor earns nothing. In the wizard,
+remove the auto-added synthetic `apify-actor-start` event (the code already charges its own
+start fee, and keeping both bills every run twice) and do not enable `apify-default-dataset-item`
+(it would bill partial runs for the item this Actor pushes without the completion fee).
 
-## Getting started
+## FAQ, disclaimers, and support
 
-For complete information [see this article](https://docs.apify.com/platform/actors/development#build-actor-locally). To run the Actor use the following command:
-
-```bash
-apify run
-```
-
-## Deploy to Apify
-
-### Connect Git repository to Apify
-
-If you've created a Git repository for the project, you can easily connect to Apify:
-
-1. Go to [Actor creation page](https://console.apify.com/actors/new)
-2. Click on **Link Git Repository** button
-
-### Push project on your local machine to Apify
-
-You can also deploy the project on your local machine to Apify without the need for the Git repository.
-
-1. Log in to Apify. You will need to provide your [Apify API Token](https://console.apify.com/account/integrations) to complete this action.
-
-    ```bash
-    apify login
-    ```
-
-2. Deploy your Actor. This command will deploy and build the Actor on the Apify Platform. You can find your newly created Actor under [Actors -> My Actors](https://console.apify.com/actors?tab=my).
-
-    ```bash
-    apify push
-    ```
-
-## Documentation reference
-
-To learn more about Apify and Actors, take a look at the following resources:
-
-- [Apify SDK for JavaScript documentation](https://docs.apify.com/sdk/js)
-- [Apify SDK for Python documentation](https://docs.apify.com/sdk/python)
-- [Apify Platform documentation](https://docs.apify.com/platform)
-- [Join our developer community on Discord](https://discord.com/invite/jyEM2PRvMU)
+- **Is scraping Instagram legal?** This Actor reads publicly available profile data. Use it in line
+  with Instagram's Terms of Service and applicable law, and do not collect personal or sensitive
+  data without a lawful basis.
+- **Why did a post get skipped?** Posts missing a url, like count, comment count, or timestamp,
+  or whose counts Instagram hides, are excluded, so the totals reflect only evidenced engagement.
+- **Something not working?** Report a bug or request a feature on the
+  [Issues tab](https://apify.com/premium_stapler/python-langgraph/issues), and if you need a
+  tailored version of this Actor, a custom solution can be commissioned the same way.

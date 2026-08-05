@@ -7,6 +7,11 @@
             "type": "string",
             "title": "Results",
             "template": "{{links.apiDefaultDatasetUrl}}/items"
+        },
+        "response": {
+            "type": "string",
+            "title": "Response file",
+            "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/response.txt"
         }
     }
 }
